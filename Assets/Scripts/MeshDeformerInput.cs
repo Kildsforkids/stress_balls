@@ -4,6 +4,7 @@ public class MeshDeformerInput : MonoBehaviour {
 
     [SerializeField] private Camera camera;
     [SerializeField] private float force = 10f;
+    [SerializeField] private float forceOffset = 0.1f;
 
     private void Update() {
         if (Input.GetMouseButton(0)) {
@@ -18,6 +19,7 @@ public class MeshDeformerInput : MonoBehaviour {
             MeshDeformer deformer = hit.collider.GetComponent<MeshDeformer>();
             if (deformer) {
                 Vector3 point = hit.point;
+                point += hit.normal * forceOffset;
                 deformer.AddDeformingForce(point, force);
                 Debug.DrawLine(camera.transform.position, point);
             }
