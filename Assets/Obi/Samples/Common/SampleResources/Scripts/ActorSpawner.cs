@@ -1,7 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using Obi;
 using UnityEngine;
-using Obi;
 
 public class ActorSpawner : MonoBehaviour {
 
