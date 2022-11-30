@@ -1,8 +1,6 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
-namespace Obi
-{
+namespace Obi {
     [RequireComponent(typeof(LineRenderer))]
     [RequireComponent(typeof(ObiParticlePicker))]
     public class ObiParticleDragger : MonoBehaviour
@@ -56,8 +54,6 @@ namespace Obi
                     if (drawSpring)
                     {
                         lineRenderer.positionCount = 2;
-                        //Debug.Log($"PickArgs: {pickArgs.worldPosition}");
-                        //Debug.Log($"Solver: {solver.transform.TransformPoint(position)}");
                         lineRenderer.SetPosition(0, pickArgs.worldPosition);
                         lineRenderer.SetPosition(1, solver.transform.TransformPoint(position));
                     }

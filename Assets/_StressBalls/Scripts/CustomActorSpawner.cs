@@ -23,7 +23,7 @@ public class CustomActorSpawner : MonoBehaviour {
     }
     
     private void SpawnActor() {
-        Instantiate(template.gameObject, transform.position, Quaternion.identity, transform.parent)
+        Instantiate(template.gameObject, transform.position, transform.rotation, transform.parent)
             .GetComponent<ObiActor>().SetFilterCategory(basePhase + _phase);
         _phase++;
         _instances++;
