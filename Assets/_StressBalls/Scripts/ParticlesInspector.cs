@@ -5,15 +5,20 @@ using UnityEngine.UI;
 public class ParticlesInspector : MonoBehaviour {
 
     [SerializeField] private ObiSolver solver;
-    [SerializeField] private Transform marker;
+    [SerializeField] private GameObject markerPrefab;
     [SerializeField] private Text debugText;
     [SerializeField] private ObiActorBlueprint blueprint;
+    [SerializeField] private LineRenderer lineRenderer;
 
     private ObiParticlePicker.ParticlePickEventArgs _pickArgs;
 
+    private Transform _marker;
     private bool _isUsed;
-    private Vector3 _elasticityForceVector;
-    private Vector3 _targetPosition;
+
+    private void Start() {
+        _marker = Instantiate(markerPrefab, Vector3.zero, Quaternion.identity).transform;
+        _marker.gameObject.SetActive(false);
+    }
 
     private void Update() {
         if (Input.GetKeyDown(KeyCode.LeftControl)) {
@@ -31,70 +36,50 @@ public class ParticlesInspector : MonoBehaviour {
     }
 
     private void Pick() {
-        var particleIndex = _pickArgs.particleIndex;
-        //Vector3 targetPosition = GetParticlePosition(_pickArgs.particleIndex);
-        Vector3 velocity = solver.velocities[particleIndex];
+        Vector3 targetPosition = GetParticlePosition(_pickArgs.particleIndex);
+        Vector3 elasticityForceVector = GetElasticityForceVector();
 
-        _targetPosition = GetParticlePosition(_pickArgs.particleIndex);
+        float force = GetElasticityForce();
 
-        _elasticityForceVector = GetElasticityForceVector();
-
-        float force = GetElasticityForce() * 100f;
-
-        //Debug.Log($"{blueprintPosition - position} | {position}");
-
-        if (marker) {
-            marker.transform.position = _targetPosition;
+        if (_marker) {
+            _marker.gameObject.SetActive(true);
+            _marker.position = targetPosition;
         }
         if (debugText) {
             debugText.text = force.ToString("N2");
         }
-        //Debug.Log($"{position} | {blueprintPosition} | {offset}");
-        //Debug.DrawRay(targetPosition, velocity, Color.blue);
 
-        Debug.DrawRay(_targetPosition, _elasticityForceVector, Color.green);
+        Debug.DrawRay(targetPosition, elasticityForceVector, Color.green);
+        DrawForceVector(targetPosition, elasticityForceVector);
     }
 
-    public float GetElasticityForce() => _elasticityForceVector.magnitude;
+    public float GetElasticityForce() => GetElasticityForceVector().magnitude * 100f;
 
     private Vector3 GetElasticityForceVector() {
         var particleIndex = _pickArgs.particleIndex;
         var blueprintIndex = particleIndex;
+        int particleCount = blueprint.particleCount;
         if (particleIndex > blueprint.particleCount) {
-            blueprintIndex = particleIndex - blueprint.particleCount;
+            if (particleIndex % particleCount == 0) {
+                blueprintIndex = particleIndex - particleCount * (particleIndex / particleCount - 1);
+            } else {
+                blueprintIndex = particleIndex - particleCount * (particleIndex / particleCount);
+            }
         }
 
         Vector3 solverPosition = solver.transform.position;
-        //Quaternion solverRotation = solver.transform.rotation;
 
         ObiActor actor = solver.particleToActor[particleIndex].actor;
 
-        //Vector3 position = solver.positions[_pickArgs.particleIndex];
         Vector3 targetPosition = GetParticlePosition(_pickArgs.particleIndex);
 
-        Vector3 velocity = solver.velocities[particleIndex];
         Vector3 offset = actor.transform.position - solverPosition;
-
-        //Debug.Log($"{particleIndex} | {blueprintIndex}");
-
-        //Vector3 positionDelta = _picker.solver.positionDeltas[_pickArgs.particleIndex];
         Vector3 blueprintPosition = blueprint.GetParticlePosition(blueprintIndex);
-        //Vector3 blueprintPosition = blueprint.positions[blueprintIndex];
-
-        //position += offset;
-
-        //var v = position - solverPosition; //the relative vector from P2 to P1.
-        //v = solverRotation * v; //rotatate
-        //position = solverPosition + v; //bring back to world space
 
         Vector3 position;
-
         Quaternion rotation = actor.transform.rotation;
-
         var rotatedPoint = RotateAroundPivot(targetPosition, actor.transform.position, Quaternion.Inverse(rotation));
-
         position = rotatedPoint;
-
         position -= offset;
 
         return blueprintPosition - position;
@@ -111,6 +96,11 @@ public class ParticlesInspector : MonoBehaviour {
     private Vector3 GetParticlePosition(int particleIndex) {
         Vector3 position = solver.positions[_pickArgs.particleIndex];
         return solver.transform.TransformPoint(position);
+    }
+
+    private void DrawForceVector(Vector3 from, Vector3 forceVector) {
+        lineRenderer.SetPosition(0, from);
+        lineRenderer.SetPosition(1, from + forceVector);
     }
 
     private void TurnOn() {
