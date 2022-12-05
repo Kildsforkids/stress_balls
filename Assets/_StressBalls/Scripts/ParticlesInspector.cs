@@ -1,113 +1,141 @@
 using Obi;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.Events;
 
-public class ParticlesInspector : MonoBehaviour {
+namespace StressBalls {
+    public class ParticlesInspector : MonoBehaviour {
 
-    [SerializeField] private ObiSolver solver;
-    [SerializeField] private GameObject markerPrefab;
-    [SerializeField] private Text debugText;
-    [SerializeField] private ObiActorBlueprint blueprint;
-    [SerializeField] private LineRenderer lineRenderer;
+        [SerializeField] private ObiSolver solver;
+        [SerializeField] private ObiParticlePicker particlePicker;
+        [SerializeField] private ObiActorBlueprint blueprint;
+        [Header("For Debug")]
+        [SerializeField] private GameObject markerPrefab;
+        [SerializeField] private ObiSoftbody softbody;
 
-    private ObiParticlePicker.ParticlePickEventArgs _pickArgs;
+        public UnityEvent<Force> OnElasticityChanged;
 
-    private Transform _marker;
-    private bool _isUsed;
+        private Particle _particle;
+        private Transform _marker;
+        private bool _isUsed;
 
-    private void Start() {
-        _marker = Instantiate(markerPrefab, Vector3.zero, Quaternion.identity).transform;
-        _marker.gameObject.SetActive(false);
-    }
+        float[] norms;
+        int[] counts;
 
-    private void Update() {
-        if (Input.GetKeyDown(KeyCode.LeftControl)) {
-            TurnOn();
-        }
-        if (Input.GetKeyUp(KeyCode.LeftControl)) {
-            TurnOff();
-        }
-    }
+        private void Start() {
+            norms = new float[softbody.particleCount];
+            counts = new int[softbody.particleCount];
+            CreateMarker();
 
-    private void FixedUpdate() {
-        if (_pickArgs != null) {
-            Pick();
-        }
-    }
-
-    private void Pick() {
-        Vector3 targetPosition = GetParticlePosition(_pickArgs.particleIndex);
-        Vector3 elasticityForceVector = GetElasticityForceVector();
-
-        float force = GetElasticityForce();
-
-        if (_marker) {
-            _marker.gameObject.SetActive(true);
-            _marker.position = targetPosition;
-        }
-        if (debugText) {
-            debugText.text = force.ToString("N2");
+            softbody.OnEndStep += Softbody_OnEndStep;
         }
 
-        Debug.DrawRay(targetPosition, elasticityForceVector, Color.green);
-        DrawForceVector(targetPosition, elasticityForceVector);
-    }
+        private void OnDestroy() {
+            softbody.OnEndStep -= Softbody_OnEndStep;
+        }
 
-    public float GetElasticityForce() => GetElasticityForceVector().magnitude * 100f;
+        private void OnEnable() {
+            particlePicker.OnParticlePicked.AddListener(Picker_OnParticlePicked);
+        }
 
-    private Vector3 GetElasticityForceVector() {
-        var particleIndex = _pickArgs.particleIndex;
-        var blueprintIndex = particleIndex;
-        int particleCount = blueprint.particleCount;
-        if (particleIndex > blueprint.particleCount) {
-            if (particleIndex % particleCount == 0) {
-                blueprintIndex = particleIndex - particleCount * (particleIndex / particleCount - 1);
-            } else {
-                blueprintIndex = particleIndex - particleCount * (particleIndex / particleCount);
+        private void OnDisable() {
+            particlePicker.OnParticlePicked.RemoveListener(Picker_OnParticlePicked);
+        }
+
+        private void CreateMarker() {
+            _marker = Instantiate(markerPrefab, Vector3.zero, Quaternion.identity).transform;
+            _marker.gameObject.SetActive(false);
+        }
+
+        private void Update() {
+            InputHandle();
+        }
+
+        private void InputHandle() {
+            if (Input.GetKeyDown(KeyCode.LeftControl)) {
+                TurnOn();
+            }
+            if (Input.GetKeyUp(KeyCode.LeftControl)) {
+                TurnOff();
             }
         }
 
-        Vector3 solverPosition = solver.transform.position;
+        private void FixedUpdate() {
+            if (_particle != null) {
+                Pick();
+            }
+        }
 
-        ObiActor actor = solver.particleToActor[particleIndex].actor;
+        private void Softbody_OnEndStep(ObiActor actor, float substepTime) {
+            var dc = softbody.GetConstraintsByType(Oni.ConstraintType.ShapeMatching) as ObiConstraints<ObiShapeMatchingConstraintsBatch>;
+            var sc = softbody.solver.GetConstraintsByType(Oni.ConstraintType.ShapeMatching) as ObiConstraints<ObiShapeMatchingConstraintsBatch>;
 
-        Vector3 targetPosition = GetParticlePosition(_pickArgs.particleIndex);
+            if (dc != null && sc != null) {
 
-        Vector3 offset = actor.transform.position - solverPosition;
-        Vector3 blueprintPosition = blueprint.GetParticlePosition(blueprintIndex);
+                for (int j = 0; j < dc.batches.Count; ++j) {
+                    var batch = dc.batches[j];
+                    var solverBatch = sc.batches[j];
 
-        Vector3 position;
-        Quaternion rotation = actor.transform.rotation;
-        var rotatedPoint = RotateAroundPivot(targetPosition, actor.transform.position, Quaternion.Inverse(rotation));
-        position = rotatedPoint;
-        position -= offset;
+                    for (int i = 0; i < batch.activeConstraintCount; i++) {
+                        // use rotation-invariant Frobeniums norm to get amount of deformation.
+                        int offset = softbody.solverBatchOffsets[(int)Oni.ConstraintType.ShapeMatching][j];
 
-        return blueprintPosition - position;
-    }
+                        // use frobenius norm to estimate deformation.
+                        float deformation = solverBatch.linearTransforms[offset + i].FrobeniusNorm() - 2;
 
-    public void Picker_OnParticlePicked(ObiParticlePicker.ParticlePickEventArgs eventArgs) {
-        if (!_isUsed) return;
-        _pickArgs = eventArgs;
-    }
+                        for (int k = 0; k < batch.numIndices[i]; ++k) {
+                            int p = batch.particleIndices[batch.firstIndex[i] + k];
+                            int or = softbody.solverIndices[p];
+                            if (softbody.solver.invMasses[or] > 0) {
+                                norms[p] += deformation;
+                                counts[p]++;
+                            }
+                        }
+                    }
+                }
 
-    private Vector3 RotateAroundPivot(Vector3 point, Vector3 pivot, Quaternion rotation) =>
-        rotation * (point - pivot) + pivot;
+                // average force over each particle, map to color, and reset forces:
+                for (int i = 0; i < softbody.solverIndices.Length; ++i) {
+                    if (counts[i] > 0) {
+                        //int solverIndex = softbody.solverIndices[i];
+                        Debug.Log($"{norms[i]} | {counts[i]}");
+                        //softbody.solver.colors[solverIndex] = gradient.Evaluate(norms[i] / counts[i] * deformationScaling + 0.5f);
+                        norms[i] = 0;
+                        counts[i] = 0;
+                    }
+                }
 
-    private Vector3 GetParticlePosition(int particleIndex) {
-        Vector3 position = solver.positions[_pickArgs.particleIndex];
-        return solver.transform.TransformPoint(position);
-    }
+                //var surfaceBlueprint = softbody.softbodyBlueprint as ObiSoftbodySurfaceBlueprint;
+                //if (surfaceBlueprint != null && skin != null && skin.sharedMesh != null) {
+                //    for (int i = 0; i < colors.Length; ++i) {
+                //        int particleIndex = surfaceBlueprint.vertexToParticle[i];
+                //        colors[i] = softbody.solver.colors[particleIndex];
+                //    }
+                //    skin.sharedMesh.colors = colors;
+                //}
+            }
+        }
 
-    private void DrawForceVector(Vector3 from, Vector3 forceVector) {
-        lineRenderer.SetPosition(0, from);
-        lineRenderer.SetPosition(1, from + forceVector);
-    }
+        private void Pick() {
+            _particle.UpdateForces();
+            OnElasticityChanged?.Invoke(_particle.ElasticityForce);
 
-    private void TurnOn() {
-        _isUsed = true;
-    }
+            if (_marker) {
+                _marker.gameObject.SetActive(true);
+                _marker.position = _particle.Position;
+            }
+        }
 
-    private void TurnOff() {
-        _isUsed = false;
+        private void Picker_OnParticlePicked(ObiParticlePicker.ParticlePickEventArgs eventArgs) {
+            if (!_isUsed) return;
+            _particle = new Particle(eventArgs.particleIndex, solver);
+        }
+
+        private void TurnOn() {
+            _isUsed = true;
+        }
+
+        private void TurnOff() {
+            _isUsed = false;
+        }
     }
 }
