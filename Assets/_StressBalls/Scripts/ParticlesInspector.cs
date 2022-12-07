@@ -14,6 +14,7 @@ namespace StressBalls {
         public UnityEvent<Vector3, Vector3> OnVelocityChange;
         public UnityEvent<float> OnElasticLimitChange;
 
+        public Particle Particle => _particle;
         public Force ElasticityForce =>
             _particle != null ? _particle.ElasticityForce : new Force();
         public float ElasticLimit => _elasticLimit;
