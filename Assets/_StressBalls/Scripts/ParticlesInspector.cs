@@ -16,10 +16,12 @@ namespace StressBalls {
 
         public Force ElasticityForce =>
             _particle != null ? _particle.ElasticityForce : new Force();
+        public float ElasticLimit => _elasticLimit;
 
         private Particle _particle;
         private Transform _marker;
         private bool _isUsed;
+        private float _elasticLimit;
 
         private void Start() {
             CreateMarker();
@@ -71,9 +73,9 @@ namespace StressBalls {
 
             float force = _particle.ElasticityForce.Value;
             float max = stiffness;
-            float result = Mathf.Clamp01(force / max) * 100f;
+            _elasticLimit = Mathf.Clamp01(force / max) * 100f;
 
-            OnElasticLimitChange?.Invoke(result);
+            OnElasticLimitChange?.Invoke(_elasticLimit);
 
             if (_marker) {
                 _marker.gameObject.SetActive(true);
