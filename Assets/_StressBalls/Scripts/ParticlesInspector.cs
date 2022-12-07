@@ -15,6 +15,9 @@ namespace StressBalls {
 
         public UnityEvent<Force> OnElasticityChanged;
 
+        public Force ElasticityForce =>
+            _particle != null ? _particle.ElasticityForce : new Force();
+
         private Particle _particle;
         private Transform _marker;
         private bool _isUsed;
@@ -66,8 +69,8 @@ namespace StressBalls {
             }
         }
 
-        [ContextMenu("GetBatchInfo")]
-        public void GetBatchInfo() {
+        //[ContextMenu("GetBatchInfo")]
+        private void GetBatchInfo() {
             var dc = softbody.GetConstraintsByType(Oni.ConstraintType.ShapeMatching) as ObiConstraints<ObiShapeMatchingConstraintsBatch>;
             var sc = softbody.solver.GetConstraintsByType(Oni.ConstraintType.ShapeMatching) as ObiConstraints<ObiShapeMatchingConstraintsBatch>;
 
