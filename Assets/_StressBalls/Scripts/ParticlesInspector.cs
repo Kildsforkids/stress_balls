@@ -7,13 +7,14 @@ namespace StressBalls {
 
         [SerializeField] private ObiSolver solver;
         [SerializeField] private ObiParticlePicker particlePicker;
-        [SerializeField] private ObiActorBlueprint blueprint;
+        //[SerializeField] private ObiActorBlueprint blueprint;
         [Header("For Debug")]
         [SerializeField] private GameObject markerPrefab;
         [SerializeField] private ObiSoftbody softbody;
         [SerializeField] private Gradient gradient;
 
         public UnityEvent<Force> OnElasticityChanged;
+        public UnityEvent<Vector3, Vector3> OnVelocityChange;
 
         public Force ElasticityForce =>
             _particle != null ? _particle.ElasticityForce : new Force();
@@ -208,6 +209,7 @@ namespace StressBalls {
         private void Pick() {
             _particle.UpdateForces();
             OnElasticityChanged?.Invoke(_particle.ElasticityForce);
+            OnVelocityChange?.Invoke(_particle.Position, _particle.Velocity);
             //GetBatchInfo();
 
             if (_marker) {

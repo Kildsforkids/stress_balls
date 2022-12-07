@@ -8,36 +8,13 @@ namespace StressBalls {
         public ObiSolver Solver { get; private set; }
         public Force ElasticityForce { get; private set; }
 
-        public ObiActor Actor {
-            get {
-                return Solver.particleToActor[Index].actor;
-            }
-        }
-        public ObiActorBlueprint Blueprint {
-            get {
-                return Actor.blueprint;
-            }
-        }
-        public Vector3 Position {
-            get {
-                return Solver.transform.TransformPoint(LocalPosition);
-            }
-        }
-        public Vector3 LocalPosition {
-            get {
-                return Solver.positions[Index];
-            }
-        }
-        public Vector3 BlueprintPosition {
-            get {
-                return Blueprint.GetParticlePosition(BlueprintIndex);
-            }
-        }
-        public int BlueprintIndex {
-            get {
-                return GetParticleBlueprintIndex();
-            }
-        }
+        public ObiActor Actor => Solver.particleToActor[Index].actor;
+        public ObiActorBlueprint Blueprint => Actor.blueprint;
+        public Vector3 Position => Solver.transform.TransformPoint(LocalPosition);
+        public Vector3 LocalPosition => Solver.positions[Index];
+        public Vector3 BlueprintPosition => Blueprint.GetParticlePosition(BlueprintIndex);
+        public Vector3 Velocity => Solver.velocities[Index];
+        public int BlueprintIndex => GetParticleBlueprintIndex();
 
         public Particle(int index, ObiSolver solver) {
             Index = index;
