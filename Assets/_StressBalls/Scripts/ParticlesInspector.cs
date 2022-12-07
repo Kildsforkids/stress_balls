@@ -10,7 +10,7 @@ namespace StressBalls {
         [Header("For Debug")]
         [SerializeField] private GameObject markerPrefab;
 
-        public UnityEvent<Force> OnElasticityChanged;
+        public UnityEvent<Force> OnElasticityChange;
         public UnityEvent<Vector3, Vector3> OnVelocityChange;
         public UnityEvent<float> OnElasticLimitChange;
 
@@ -65,7 +65,7 @@ namespace StressBalls {
 
             _particle.ElasticityForce.SetCoef(stiffness);
 
-            OnElasticityChanged?.Invoke(_particle.ElasticityForce);
+            OnElasticityChange?.Invoke(_particle.ElasticityForce);
             OnVelocityChange?.Invoke(_particle.Position, _particle.Velocity);
 
             float force = _particle.ElasticityForce.Value;

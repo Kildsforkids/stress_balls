@@ -1658,6 +1658,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7839362067401225643, guid: 2246668d8c6f99944b4aded657246a53,
         type: 3}
+      propertyPath: OnElasticityChange.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7839362067401225643, guid: 2246668d8c6f99944b4aded657246a53,
+        type: 3}
       propertyPath: OnElasticityChanged.m_PersistentCalls.m_Calls.Array.size
       value: 1
       objectReference: {fileID: 0}
@@ -1688,6 +1693,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7839362067401225643, guid: 2246668d8c6f99944b4aded657246a53,
         type: 3}
+      propertyPath: OnElasticityChange.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 779318506914269138}
+    - target: {fileID: 7839362067401225643, guid: 2246668d8c6f99944b4aded657246a53,
+        type: 3}
       propertyPath: OnElasticityChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 779318506914269138}
@@ -1705,6 +1715,16 @@ PrefabInstance:
         type: 3}
       propertyPath: OnVelocityChange.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: UpdateVector
+      objectReference: {fileID: 0}
+    - target: {fileID: 7839362067401225643, guid: 2246668d8c6f99944b4aded657246a53,
+        type: 3}
+      propertyPath: OnElasticityChange.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7839362067401225643, guid: 2246668d8c6f99944b4aded657246a53,
+        type: 3}
+      propertyPath: OnElasticityChange.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: UpdateForce
       objectReference: {fileID: 0}
     - target: {fileID: 7839362067401225643, guid: 2246668d8c6f99944b4aded657246a53,
         type: 3}
@@ -1733,6 +1753,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7839362067401225643, guid: 2246668d8c6f99944b4aded657246a53,
         type: 3}
+      propertyPath: OnElasticityChange.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: StressBalls.ForceDataVisualizer, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 7839362067401225643, guid: 2246668d8c6f99944b4aded657246a53,
+        type: 3}
       propertyPath: OnElasticityChanged.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
       value: StressBalls.ForceDataVisualizer, Assembly-CSharp
       objectReference: {fileID: 0}
@@ -1744,6 +1769,11 @@ PrefabInstance:
     - target: {fileID: 7839362067401225643, guid: 2246668d8c6f99944b4aded657246a53,
         type: 3}
       propertyPath: OnVelocityChange.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 7839362067401225643, guid: 2246668d8c6f99944b4aded657246a53,
+        type: 3}
+      propertyPath: OnElasticityChange.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
       value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
     - target: {fileID: 7839362067401225643, guid: 2246668d8c6f99944b4aded657246a53,
