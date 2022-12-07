@@ -949,8 +949,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   text: {fileID: 7106983056251538077}
-  lineRenderer: {fileID: 8960290740087384202}
-  drawDebugRay: 1
+  lineRenderer: {fileID: 0}
+  drawDebugRay: 0
   debugRayColor: {r: 0, g: 0.5804844, b: 1, a: 1}
 --- !u!120 &8960290740087384202
 LineRenderer:
@@ -1694,7 +1694,7 @@ PrefabInstance:
     - target: {fileID: 7839362067401225643, guid: 2246668d8c6f99944b4aded657246a53,
         type: 3}
       propertyPath: OnVelocityChange.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
-      value: 0
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 7839362067401225643, guid: 2246668d8c6f99944b4aded657246a53,
         type: 3}
