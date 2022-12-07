@@ -34,6 +34,7 @@ namespace StressBalls {
         }
 
         private void CreateMarker() {
+            if (markerPrefab == null) return;
             _marker = Instantiate(markerPrefab, Vector3.zero, Quaternion.identity).transform;
             _marker.gameObject.SetActive(false);
         }
