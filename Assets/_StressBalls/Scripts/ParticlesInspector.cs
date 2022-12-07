@@ -11,6 +11,7 @@ namespace StressBalls {
         [Header("For Debug")]
         [SerializeField] private GameObject markerPrefab;
         [SerializeField] private ObiSoftbody softbody;
+        [SerializeField] private Gradient gradient;
 
         public UnityEvent<Force> OnElasticityChanged;
 
@@ -26,12 +27,12 @@ namespace StressBalls {
             counts = new int[softbody.particleCount];
             CreateMarker();
 
-            softbody.OnEndStep += Softbody_OnEndStep;
+            //softbody.OnEndStep += Softbody_OnEndStep;
         }
 
-        private void OnDestroy() {
-            softbody.OnEndStep -= Softbody_OnEndStep;
-        }
+        //private void OnDestroy() {
+        //    softbody.OnEndStep -= Softbody_OnEndStep;
+        //}
 
         private void OnEnable() {
             particlePicker.OnParticlePicked.AddListener(Picker_OnParticlePicked);
@@ -65,44 +66,130 @@ namespace StressBalls {
             }
         }
 
-        private void Softbody_OnEndStep(ObiActor actor, float substepTime) {
+        [ContextMenu("GetBatchInfo")]
+        public void GetBatchInfo() {
             var dc = softbody.GetConstraintsByType(Oni.ConstraintType.ShapeMatching) as ObiConstraints<ObiShapeMatchingConstraintsBatch>;
             var sc = softbody.solver.GetConstraintsByType(Oni.ConstraintType.ShapeMatching) as ObiConstraints<ObiShapeMatchingConstraintsBatch>;
 
-            if (dc != null && sc != null) {
+            //if (_particle != null) {
+            //    if (dc != null && sc != null) {
+            //        //Debug.Log($"Batch count: {dc.GetBatchCount()}");
+            //        //var batch = dc.batches[0];
+            //        //Debug.Log($"{batch.particleIndices.count} | {softbody.particleCount}");
+            //        //Debug.Log(_particle.Blueprint.particleCount);
+            //        //Debug.Log(_particle.Actor.particleCount);
+            //        int particleIndex = _particle.Index;
+            //        Debug.Log($"ParticleIndex: {particleIndex}");
+            //        for (int i = 0; i < sc.batches.Count; i++) {
+            //            var batch = sc.batches[i];
+            //            for (int j = 0; j < batch.particleIndices.count; j++) {
+            //                if (batch.particleIndices[j] == particleIndex) {
+            //                    Debug.Log($"Found in batch #{i}");
+            //                }
+            //            }
+            //        }
+            //    }
+            //} else {
+            //    Debug.Log("<color=red>Not particles found!</color>");
+            //}
+            if (_particle != null) {
+                if (dc != null && sc != null) {
+                    for (int j = 0; j < dc.batches.Count; ++j) {
+                        var batch = dc.batches[j];
+                        var solverBatch = sc.batches[j];
 
-                for (int j = 0; j < dc.batches.Count; ++j) {
-                    var batch = dc.batches[j];
-                    var solverBatch = sc.batches[j];
+                        for (int i = 0; i < batch.activeConstraintCount; i++) {
+                            // use rotation-invariant Frobeniums norm to get amount of deformation.
+                            int offset = softbody.solverBatchOffsets[(int)Oni.ConstraintType.ShapeMatching][j];
 
-                    for (int i = 0; i < batch.activeConstraintCount; i++) {
-                        // use rotation-invariant Frobeniums norm to get amount of deformation.
-                        int offset = softbody.solverBatchOffsets[(int)Oni.ConstraintType.ShapeMatching][j];
+                            // use frobenius norm to estimate deformation.
+                            float deformation = solverBatch.linearTransforms[offset + i].FrobeniusNorm() - 2;
 
-                        // use frobenius norm to estimate deformation.
-                        float deformation = solverBatch.linearTransforms[offset + i].FrobeniusNorm() - 2;
+                            for (int k = 0; k < batch.numIndices[i]; ++k) {
+                                int p = batch.particleIndices[batch.firstIndex[i] + k];
+                                int or = softbody.solverIndices[p];
 
-                        for (int k = 0; k < batch.numIndices[i]; ++k) {
-                            int p = batch.particleIndices[batch.firstIndex[i] + k];
-                            int or = softbody.solverIndices[p];
-                            if (softbody.solver.invMasses[or] > 0) {
-                                norms[p] += deformation;
-                                counts[p]++;
+                                //if (or == _particle.Index) {
+                                //    Debug.Log($"Found in {i} activeConstraint of {j} batch");
+                                //}
+                                if (softbody.solver.invMasses[or] > 0) {
+                                    norms[p] += deformation;
+                                    counts[p]++;
+                                }
                             }
                         }
                     }
                 }
 
-                // average force over each particle, map to color, and reset forces:
-                for (int i = 0; i < softbody.solverIndices.Length; ++i) {
-                    if (counts[i] > 0) {
-                        //int solverIndex = softbody.solverIndices[i];
-                        Debug.Log($"{norms[i]} | {counts[i]}");
-                        //softbody.solver.colors[solverIndex] = gradient.Evaluate(norms[i] / counts[i] * deformationScaling + 0.5f);
-                        norms[i] = 0;
-                        counts[i] = 0;
-                    }
+                int particleIndex = _particle.Index;
+                if (counts[particleIndex] > 0) {
+                    float deformation = norms[particleIndex] / counts[particleIndex] * 20f + 0.5f;
+                    //Color color = gradient.Evaluate(deformation);
+                    //Debug.Log($"<color=green>[{particleIndex}] {deformation}</color>");
+                    Debug.Log(deformation);
                 }
+
+                //for (int i = 0; i < softbody.solverIndices.Length; ++i) {
+                //    if (counts[i] > 0) {
+                //        int solverIndex = softbody.solverIndices[i];
+                //        //softbody.solver.colors[solverIndex] = gradient.Evaluate(norms[i] / counts[i] * deformationScaling + 0.5f);
+                //        float deformation = norms[i] / counts[i] * 10f + 0.5f;
+                //        if (solverIndex == particleIndex) {
+                //            Debug.Log($"<color=green>[{solverIndex}] {deformation}</color>");
+
+                //        } else {
+                //            Debug.Log($"[{solverIndex}] {deformation}");
+                //        }
+                //        norms[i] = 0;
+                //        counts[i] = 0;
+                //    }
+                //}
+            }
+        }
+
+        private void Softbody_OnEndStep(ObiActor actor, float substepTime) {
+            var dc = softbody.GetConstraintsByType(Oni.ConstraintType.ShapeMatching) as ObiConstraints<ObiShapeMatchingConstraintsBatch>;
+            var sc = softbody.solver.GetConstraintsByType(Oni.ConstraintType.ShapeMatching) as ObiConstraints<ObiShapeMatchingConstraintsBatch>;
+            
+            if (dc != null && sc != null) {
+
+                var batch = dc.batches[0];
+                //Debug.Log($"{batch.constraintCount} | {batch.activeConstraintCount}");
+                Debug.Log($"{batch.particleIndices.count} | {softbody.particleCount}");
+
+                //for (int j = 0; j < dc.batches.Count; ++j) {
+                //    dc.batches[1].particleIndices
+                //    var batch = dc.batches[j];
+                //    var solverBatch = sc.batches[j];
+
+                //    for (int i = 0; i < batch.activeConstraintCount; i++) {
+                //        // use rotation-invariant Frobeniums norm to get amount of deformation.
+                //        int offset = softbody.solverBatchOffsets[(int)Oni.ConstraintType.ShapeMatching][j];
+
+                //        // use frobenius norm to estimate deformation.
+                //        float deformation = solverBatch.linearTransforms[offset + i].FrobeniusNorm() - 2;
+
+                //        for (int k = 0; k < batch.numIndices[i]; ++k) {
+                //            int p = batch.particleIndices[batch.firstIndex[i] + k];
+                //            int or = softbody.solverIndices[p];
+                //            if (softbody.solver.invMasses[or] > 0) {
+                //                norms[p] += deformation;
+                //                counts[p]++;
+                //            }
+                //        }
+                //    }
+                //}
+
+                //// average force over each particle, map to color, and reset forces:
+                //for (int i = 0; i < softbody.solverIndices.Length; ++i) {
+                //    if (counts[i] > 0) {
+                //        //int solverIndex = softbody.solverIndices[i];
+                //        Debug.Log($"{norms[i]} | {counts[i]}");
+                //        //softbody.solver.colors[solverIndex] = gradient.Evaluate(norms[i] / counts[i] * deformationScaling + 0.5f);
+                //        norms[i] = 0;
+                //        counts[i] = 0;
+                //    }
+                //}
 
                 //var surfaceBlueprint = softbody.softbodyBlueprint as ObiSoftbodySurfaceBlueprint;
                 //if (surfaceBlueprint != null && skin != null && skin.sharedMesh != null) {
@@ -118,6 +205,7 @@ namespace StressBalls {
         private void Pick() {
             _particle.UpdateForces();
             OnElasticityChanged?.Invoke(_particle.ElasticityForce);
+            //GetBatchInfo();
 
             if (_marker) {
                 _marker.gameObject.SetActive(true);
